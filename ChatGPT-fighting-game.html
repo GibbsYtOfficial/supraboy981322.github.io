@@ -1,10 +1,13 @@
+<!DOCTYPE html>
 <html>
   <div id="game">
-  <div id="player1" class="fighter"></div>
-  <div id="player2" class="fighter"></div>
-</div>
-<style>
-  .fighter {
+    <div id="player1" class="fighter"></div>
+    <div id="player2" class="fighter"></div>
+    <div id="attack1" class="attack"></div>
+    <div id="attack2" class="attack"></div>
+  </div>
+  <style>
+    .fighter {
   width: 50px;
   height: 50px;
   background-color: blue;
@@ -18,26 +21,27 @@
 #player2 {
   right: 100px;
 }
-</style>
-<script>
-  class Fighter {
+
+.attack {
+  width: 10px;
+  height: 10px;
+  background-color: red;
+  position: absolute;
+  display: none;
+}
+  </style>  
+  <script>
+    class Fighter {
   constructor(name, hp, damage) {
     this.name = name;
     this.hp = hp;
     this.damage = damage;
     this.element = null;
-  }
-
-  attack(target) {
-    target.takeDamage(this.damage);
-  }
-
-  takeDamage(damage) {
-    this.hp -= damage;
-    if (this.hp <= 0) {
-      this.hp = 0;
-      this.element.classList.add('dead');
-    }
+    this.attackElement = null;
+    this.attackInterval = null;
+    this.attackInProgress = false;
+    this.opponent = null;
+    this.position = null;
   }
 
   render() {
@@ -45,6 +49,50 @@
     this.element.className = 'fighter';
     this.element.innerText = this.name;
     document.getElementById('game').appendChild(this.element);
+    this.position = this.element.offsetLeft;
+  }
+
+  move(distance) {
+    this.position += distance;
+    this.element.style.left = this.position + 'px';
+  }
+
+  attack() {
+    if (this.attackInProgress) {
+      return;
+    }
+    this.attackInProgress = true;
+    this.attackElement.style.left = this.position + 'px';
+    this.attackElement.style.display = 'block';
+    this.attackInterval = setInterval(() => {
+      if (this.attackElement.offsetLeft > this.opponent.position &&
+          this.attackElement.offsetLeft < this.opponent.position + 50) {
+        this.opponent.takeDamage(this.damage);
+      }
+    }, 10);
+    setTimeout(() => {
+      this.attackInProgress = false;
+      this.attackElement.style.display = 'none';
+      clearInterval(this.attackInterval);
+    }, 500);
+  }
+
+  takeDamage(damage) {
+    this.hp -= damage;
+    if (this.hp <= 0) {
+      this.hp = 0;
+      this.element.classList.add('dead');
+      this.attackElement.style.display = 'none';
+      clearInterval(this.attackInterval);
+    }
+  }
+
+  setOpponent(opponent) {
+    this.opponent = opponent;
+  }
+
+  setAttackElement(attackElement) {
+    this.attackElement = attackElement;
   }
 }
 
@@ -54,12 +102,28 @@ const player2 = new Fighter('Player 2', 100, 10);
 player1.render();
 player2.render();
 
+const attack1 = document.getElementById('attack1');
+const attack2 = document.getElementById('attack2');
+
+player1.setOpponent(player2);
+player2.setOpponent(player1);
+
+player1.setAttackElement(attack1);
+player2.setAttackElement(attack2);
+
 document.addEventListener('keydown', function(event) {
   if (event.keyCode === 65) {
-    player1.attack(player2);
+    player1.move(-10);
+  } else if (event.keyCode === 68) {
+    player1.move(10);
+  } else if (event.keyCode === 70) {
+    player1.attack();
+  } else if (event.keyCode === 74) {
+    player2.move(-10);
   } else if (event.keyCode === 76) {
-    player2.attack(player1);
+    player2.move(10);
+  } else if (event.keyCode === 186) {
+    player2.attack();
   }
-});
 </script>
 </html>
